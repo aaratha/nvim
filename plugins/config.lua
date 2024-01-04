@@ -108,8 +108,8 @@ return {
 
         -- Setup orgmode
         require("orgmode").setup({
-          org_default_notes_file = "drivecloud/org/notes.org",
-          org_agenda_files = { "drivecloud/org/**" },
+          org_default_notes_file = "~/OneDrive/org/notes.org",
+          org_agenda_files = { "~/OneDrive/org/**" },
           org_agenda_skip_scheduled_if_done = true,
           org_agenda_skip_deadline_if_done = true,
           org_agenda_skip_if_done = true,
@@ -163,17 +163,75 @@ return {
       })
     end,
   },
-  -- {
-  --   "nanozuki/tabby.nvim",
-  --   event = "VimEnter",
-  --   dependencies = "nvim-tree/nvim-web-devicons",
-  -- },
-  config = function()
-    vim.keys.normal_mode["<leader>t<leader>"] = ":terminal<CR>"
-    vim.keys.normal_mode["<leader>oz"] = ":ZenMode<CR>i"
-    vim.keys.normal_mode["|"] = ":vsplit<CR>"
-    vim.keys.normal_mode["-"] = ":split<CR>"
-    vim.cmd("highlight WinSeparator #ffffff")
-    vim.cmd("hi WinSeparator guifg=#ffffff")
-  end,
+  {
+    "zbirenbaum/copilot.lua",
+    cmd = "Copilot",
+    event = "InsertEnter",
+    config = function()
+      require("copilot").setup({
+        suggestion = { enabled = false },
+        panel = { enabled = false },
+      })
+    end,
+    dependencies = {
+      {
+        "zbirenbaum/copilot-cmp",
+        config = function()
+          require("copilot_cmp").setup()
+        end,
+      },
+    },
+  },
+  {
+    "utilyre/barbecue.nvim",
+    name = "barbecue",
+    version = "*",
+    dependencies = {
+      "SmiteshP/nvim-navic",
+      "nvim-tree/nvim-web-devicons", -- optional dependency
+    },
+    opts = {
+      -- configurations go here
+    },
+  },
+  {
+    "razak17/tailwind-fold.nvim",
+    opts = {},
+    dependencies = { "nvim-treesitter/nvim-treesitter" },
+    ft = { "html", "svelte", "astro", "vue", "typescriptreact" },
+  },
+  {
+    "windwp/nvim-ts-autotag",
+    config = function()
+      require("nvim-ts-autotag").setup()
+    end,
+  },
+  {
+    "jackMort/ChatGPT.nvim",
+    event = "VeryLazy",
+    config = function()
+      require("chatgpt").setup({
+        popup_input = {
+          submit = "<CR>",
+        },
+      })
+    end,
+    dependencies = {
+      "MunifTanjim/nui.nvim",
+      "nvim-lua/plenary.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+  },
+  {
+    "nanozuki/tabby.nvim",
+    event = "VimEnter",
+    dependencies = "nvim-tree/nvim-web-devicons",
+  },
+  {
+    "numToStr/Comment.nvim",
+    opts = {
+      -- add any options here
+    },
+    lazy = false,
+  },
 }
