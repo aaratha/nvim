@@ -88,7 +88,17 @@ return {
     {
       "nvim-orgmode/orgmode",
       dependencies = {
-        { "nvim-treesitter/nvim-treesitter", lazy = true },
+        {
+          "nvim-treesitter/nvim-treesitter",
+          lazy = true,
+          require("nvim-treesitter.configs").setup({
+            highlight = {
+              enable = true,
+              additional_vim_regex_highlighting = { "org" }, -- < This one
+            },
+            ensure_installed = { "org" },
+          }),
+        },
         { "akinsho/org-bullets.nvim" },
         { "dhruvasagar/vim-table-mode" },
       },
@@ -115,7 +125,7 @@ return {
           org_agenda_skip_if_done = true,
           org_hide_emphasis_markers = true,
           org_todo_keywords = { "TODO(t)", "COMING-UP(c)", "IN-PROGRESS(p)", "|", "DONE(d)" },
-          concealcursor = "nc",
+          concealcursor = "nvic",
           foldlevelstart = 1,
           mappings = {
             global = {},
@@ -224,8 +234,57 @@ return {
   },
   {
     "nanozuki/tabby.nvim",
-    event = "VimEnter",
     dependencies = "nvim-tree/nvim-web-devicons",
+    config = function()
+      require("tabby.tabline").set(function(line)
+        local theme = {
+          fill = "TabLineFill",
+          -- Also you can do this: fill = { fg='#f2e9de', bg='#907aa9', style='italic' }
+          head = "TabLine",
+          -- current_tab = 'TabLineSel',
+          current_tab = { fg = "#F8FBF6", bg = "#896a98", style = "italic" },
+          tab = "TabLine",
+          win = "TabLine",
+          tail = "TabLine",
+        }
+        return {
+          {
+            { "  ", hl = theme.head },
+            line.sep("", theme.head, theme.fill),
+          },
+          line.tabs().foreach(function(tab)
+            local hl = tab.is_current() and theme.current_tab or theme.tab
+            return {
+              line.sep("", hl, theme.fill),
+              tab.is_current() and "" or "",
+              tab.number(),
+              tab.name(),
+              -- tab.close_btn(''), -- show a close button
+              line.sep("", hl, theme.fill),
+              hl = hl,
+              margin = " ",
+            }
+          end),
+          line.spacer(),
+          -- shows list of windows in tab
+          -- line.wins_in_tab(line.api.get_current_tab()).foreach(function(win)
+          --   return {
+          --     line.sep('', theme.win, theme.fill),
+          --     win.is_current() and '' or '',
+          --     win.buf_name(),
+          --     line.sep('', theme.win, theme.fill),
+          --     hl = theme.win,
+          --     margin = ' ',
+          --   }
+          -- end),
+          {
+            line.sep("", theme.tail, theme.fill),
+            { "  ", hl = theme.tail },
+          },
+          hl = theme.fill,
+        }
+      end)
+    end,
   },
   {
     "numToStr/Comment.nvim",
@@ -234,4 +293,115 @@ return {
     },
     lazy = false,
   },
+  {
+    "dccsillag/magma-nvim",
+  },
+  {
+    "nvimdev/dashboard-nvim",
+    event = "VimEnter",
+    opts = function()
+      local logo = [[
+ _____  ___    _______    ______  ___      ___  __     ___      ___ 
+(\"   \|"  \  /"     "|  /    " \|"  \    /"  ||" \   |"  \    /"  |
+|.\\   \    |(: ______) // ____  \\   \  //  / ||  |   \   \  //   |
+|: \.   \\  | \/    |  /  /    ) :)\\  \/. ./  |:  |   /\\  \/.    |
+|.  \    \. | // ___)_(: (____/ //  \.    //   |.  |  |: \.        |
+|    \    \ |(:      "|\        /    \\   /    /\  |\ |.  \    /:  |
+ \___|\____\) \_______) \"_____/      \__/    (__\_|_)|___|\__/|___|
+      ]]
+      logo = string.rep("\n", 8) .. logo .. "\n\n"
+      local opts = {
+        theme = "doom",
+        hide = {
+          -- this is taken care of by lualine
+          -- enabling this messes up the actual laststatus setting after loading a file
+          statusline = false,
+        },
+        config = {
+          header = vim.split(logo, "\n"),
+        -- stylua: ignore
+        center = {
+          { action = "e OneDrive/org/notes.org",                                 desc = " Enter OrgMode",   icon = "", key = "o" },
+          { action = "Telescope find_files",                                     desc = " Find file",       icon = " ", key = "f" },
+          { action = "ene | startinsert",                                        desc = " New file",        icon = " ", key = "n" },
+          { action = "Telescope oldfiles",                                       desc = " Recent files",    icon = " ", key = "r" },
+          { action = [[lua require("lazyvim.util").telescope.config_files()()]], desc = " Config",          icon = " ", key = "c" },
+          { action = "Lazy",                                                     desc = " Lazy",            icon = "󰒲 ", key = "l" },
+          { action = "qa",                                                       desc = " Quit",            icon = " ", key = "q" },
+        },
+          footer = function()
+            local stats = require("lazy").stats()
+            local ms = (math.floor(stats.startuptime * 100 + 0.5) / 100)
+            return { "⚡ Neovim loaded " .. stats.loaded .. "/" .. stats.count .. " plugins in " .. ms .. "ms" }
+          end,
+        },
+      }
+      for _, button in ipairs(opts.config.center) do
+        button.desc = button.desc .. string.rep(" ", 43 - #button.desc)
+        button.key_format = "  %s"
+      end
+      -- close Lazy and re-open when the dashboard is ready
+      if vim.o.filetype == "lazy" then
+        vim.cmd.close()
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "DashboardLoaded",
+          callback = function()
+            require("lazy").show()
+          end,
+        })
+      end
+      return opts
+    end,
+  },
+  -- {
+  --   "benlubas/molten-nvim",
+  --   version = "^1.0.0", -- use version <2.0.0 to avoid breaking changes
+  --   build = ":UpdateRemotePlugins",
+  --   init = function()
+  --     -- this is an example, not a default. Please see the readme for more configuration options
+  --     vim.g.molten_output_win_max_height = 12
+  --   end,
+  -- },
+  -- {
+  --   "3rd/image.nvim",
+  --   require("image").setup({
+  --     backend = "kitty",
+  --     integrations = {
+  --       markdown = {
+  --         enabled = true,
+  --         clear_in_insert_mode = false,
+  --         download_remote_images = true,
+  --         only_render_image_at_cursor = false,
+  --         filetypes = { "markdown", "vimwiki" }, -- markdown extensions (ie. quarto) can go here
+  --       },
+  --       neorg = {
+  --         enabled = true,
+  --         clear_in_insert_mode = false,
+  --         download_remote_images = true,
+  --         only_render_image_at_cursor = false,
+  --         filetypes = { "norg" },
+  --       },
+  --     },
+  --     max_width = nil,
+  --     max_height = nil,
+  --     max_width_window_percentage = nil,
+  --     max_height_window_percentage = 50,
+  --     window_overlap_clear_enabled = false, -- toggles images when windows are overlapped
+  --     window_overlap_clear_ft_ignore = { "cmp_menu", "cmp_docs", "" },
+  --     editor_only_render_when_focused = false, -- auto show/hide images when the editor gains/looses focus
+  --     tmux_show_only_in_active_window = false, -- auto show/hide images in the correct Tmux window (needs visual-activity off)
+  --     hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp" }, -- render image files as images when opened
+  --   }),
+  -- },
+  -- {
+  --   "edluffy/hologram.nvim",
+  --   opts = function()
+  --     require("hologram").setup({
+  --       auto_display = true, -- WIP automatic markdown image display, may be prone to breaking
+  --     })
+  --   end,
+  -- },
+  { "dhruvasagar/vim-table-mode" },
+  -- { "yuttie/comfortable-motion.vim" },
+  { "kblin/vim-fountain" },
 }
